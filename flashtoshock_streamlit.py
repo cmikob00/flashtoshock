@@ -137,68 +137,291 @@ def find_yield_for_measurement(d_meas, t_meas, rho, a, shock_model='weak'):
 # --- Plotting Functions ---
 # Adapted to render in Streamlit via st.pyplot()
 
-def plot_yield_results(d_meas, d_unc, t_meas, t_unc, W_nom, W_unc_range, rho, a, shock_model, burst_type, pdf_pages):
+def plot_yield_results(
+    d_meas,
+    d_unc,
+    t_meas,
+    t_unc,
+    W_nom,
+    W_unc_range,
+    rho,
+    a,
+    shock_model,
+    burst_type,
+    pdf_pages
+):
+
     fig = plt.figure(figsize=(9.0, 6.5))
     plt.grid(True, which='both', linestyle=':')
 
     W_best_plot = W_nom
     W_min_plot, W_max_plot = W_unc_range
 
-    # generate model curve by calculating yield forward from range of distances
-    d_curve = np.linspace(0.95*d_meas, 1.05*d_meas, 200)
+    # ---------------------------------------------------------
+    # Plotting range controls
+    # ---------------------------------------------------------
+
+    d_fudge_low  = 0.8
+    d_fudge_high = 1.2
+
+    # logarithmically spaced distance array
+    d_curve = np.logspace(
+        np.log10(max(1.0, d_meas * d_fudge_low)),
+        np.log10(d_meas * d_fudge_high),
+        500
+    )
+
+    # ---------------------------------------------------------
+    # Generate yield curves
+    # ---------------------------------------------------------
+
     w_curve = []
-    w_curve_low = []   # yield if time was slower (t + t_unc)
-    w_curve_high = []  # yield if time was faster (t - t_unc)
+    w_curve_low = []
+    w_curve_high = []
 
     for d in d_curve:
-        w_curve.append(find_yield_for_measurement(d, t_meas, rho, a, shock_model))
-        w_curve_low.append(find_yield_for_measurement(d, t_meas + t_unc, rho, a, shock_model))
-        w_curve_high.append(find_yield_for_measurement(d, t_meas - t_unc, rho, a, shock_model))
+
+        # nominal timing
+        w_curve.append(
+            find_yield_for_measurement(
+                d,
+                t_meas,
+                rho,
+                a,
+                shock_model
+            )
+        )
+
+        # slower arrival -> lower yield
+        w_curve_low.append(
+            find_yield_for_measurement(
+                d,
+                t_meas + t_unc,
+                rho,
+                a,
+                shock_model
+            )
+        )
+
+        # faster arrival -> higher yield
+        w_curve_high.append(
+            find_yield_for_measurement(
+                d,
+                t_meas - t_unc,
+                rho,
+                a,
+                shock_model
+            )
+        )
 
     w_curve = np.array(w_curve)
     w_curve_low = np.array(w_curve_low)
     w_curve_high = np.array(w_curve_high)
 
-    valid_indices = ~np.isnan(w_curve) & ~np.isnan(w_curve_low) & ~np.isnan(w_curve_high)
+    # ---------------------------------------------------------
+    # Remove invalid values
+    # ---------------------------------------------------------
+
+    valid_indices = (
+        np.isfinite(w_curve) &
+        np.isfinite(w_curve_low) &
+        np.isfinite(w_curve_high)
+    )
+
     d_curve = d_curve[valid_indices]
     w_curve = w_curve[valid_indices]
     w_curve_low = w_curve_low[valid_indices]
     w_curve_high = w_curve_high[valid_indices]
 
+    # ---------------------------------------------------------
+    # Surface burst correction
+    # ---------------------------------------------------------
+
     if burst_type == 'surface':
-        w_curve = 0.5 * w_curve
-        w_curve_low = 0.5 * w_curve_low
-        w_curve_high = 0.5 * w_curve_high
+
+        w_curve *= 0.5
+        w_curve_low *= 0.5
+        w_curve_high *= 0.5
+
         W_best_plot *= 0.5
         W_min_plot  *= 0.5
         W_max_plot  *= 0.5
-    
-    plt.plot(w_curve, d_curve, color='blue', label='Model Relationship')
-    plt.fill_betweenx(d_curve, w_curve_low, w_curve_high, color='blue', alpha=0.15, label='Timing Uncertainty Envelope')
-    plt.axhspan(d_meas - d_unc, d_meas + d_unc, color='green', alpha=0.1, label=f'Distance Uncertainty')
-    plt.axhline(d_meas, linestyle='-', color='green', label=f'Measured Distance = {d_meas:.1f} m')
-    plt.axhline(d_meas + d_unc, linestyle='--', color='green', alpha=0.7)
-    plt.axhline(d_meas - d_unc, linestyle='--', color='green', alpha=0.7)
-    plt.axvline(W_best_plot, linestyle='--', color='red', label=f'Best Yield = {W_best_plot:.3f} kt [{W_min_plot:.3f} to {W_max_plot:.3f}] kt')
-    plt.axvspan(W_min_plot, W_max_plot, color='red', alpha=0.2, label=f'Yield Uncertainty')
-    plt.axvline(W_min_plot, linestyle=':', color='red')
-    plt.axvline(W_max_plot, linestyle=':', color='red')
-    
-    plt.xlabel('Yield (kt)')
-    plt.ylabel('Distance (m)')
-    title = f'Yield vs. Distance ({shock_model.capitalize()} Model, {burst_type.title()} Burst)'
-    plt.title(title)
+
+    # ---------------------------------------------------------
+    # Protect uncertainty envelope ordering
+    # ---------------------------------------------------------
+
+    w_lower = np.minimum(w_curve_low, w_curve_high)
+    w_upper = np.maximum(w_curve_low, w_curve_high)
+
+    # ---------------------------------------------------------
+    # Plot model relationship
+    # ---------------------------------------------------------
+
+    plt.plot(
+        w_curve,
+        d_curve,
+        color='blue',
+        linewidth=2,
+        label='Model Relationship'
+    )
+
+    plt.fill_betweenx(
+        d_curve,
+        w_lower,
+        w_upper,
+        color='blue',
+        alpha=0.15,
+        label='Timing Uncertainty Envelope'
+    )
+
+    # ---------------------------------------------------------
+    # Measured distance and uncertainty
+    # ---------------------------------------------------------
+
+    plt.axhspan(
+        d_meas - d_unc,
+        d_meas + d_unc,
+        color='green',
+        alpha=0.10,
+        label='Distance Uncertainty'
+    )
+
+    plt.axhline(
+        d_meas,
+        linestyle='-',
+        color='green',
+        linewidth=1.5,
+        label=f'Measured Distance = {d_meas:.1f} m'
+    )
+
+    plt.axhline(
+        d_meas + d_unc,
+        linestyle='--',
+        color='green',
+        alpha=0.7
+    )
+
+    plt.axhline(
+        d_meas - d_unc,
+        linestyle='--',
+        color='green',
+        alpha=0.7
+    )
+
+    # ---------------------------------------------------------
+    # Yield estimate and uncertainty
+    # ---------------------------------------------------------
+
+    plt.axvline(
+        W_best_plot,
+        linestyle='--',
+        color='red',
+        linewidth=1.5,
+        label=(
+            f'Best Yield = {W_best_plot:.3f} kt '
+            f'[{W_min_plot:.3f} to {W_max_plot:.3f}] kt'
+        )
+    )
+
+    plt.axvspan(
+        W_min_plot,
+        W_max_plot,
+        color='red',
+        alpha=0.20,
+        label='Yield Uncertainty'
+    )
+
+    plt.axvline(
+        W_min_plot,
+        linestyle=':',
+        color='red'
+    )
+
+    plt.axvline(
+        W_max_plot,
+        linestyle=':',
+        color='red'
+    )
+
+    # ---------------------------------------------------------
+    # Axis scaling
+    # ---------------------------------------------------------
+
     plt.xscale('log')
     plt.yscale('log')
-    if len(w_curve) > 0:
-        plt.xlim(min(w_curve), max(w_curve))
+
+    valid_w = np.concatenate([
+        w_curve,
+        w_lower,
+        w_upper
+    ])
+
+    valid_w = valid_w[np.isfinite(valid_w)]
+
+    if len(valid_w) > 0:
+
+        x_min = np.min(valid_w)
+        x_max = np.max(valid_w)
+
+        plt.xlim(
+            x_min * 0.8,
+            x_max * 1.2
+        )
+
+    plt.ylim(
+        d_curve.min() * 0.8,
+        d_curve.max() * 1.2
+    )
+
+    # ---------------------------------------------------------
+    # Labels and title
+    # ---------------------------------------------------------
+
+    plt.xlabel('Yield (kt)')
+    plt.ylabel('Distance (m)')
+
+    title = (
+        f'Yield vs. Distance '
+        f'({shock_model.capitalize()} Model, '
+        f'{burst_type.title()} Burst)'
+    )
+
+    plt.title(title)
+
     plt.legend(loc='best')
-    
-    plt.gcf().text(.06, .95, 'UNCLASSIFIED', fontsize=10, color='green')
-    plt.gcf().text(.78, .05, 'UNCLASSIFIED', fontsize=10, color='green')
+
+    # ---------------------------------------------------------
+    # Classification markings
+    # ---------------------------------------------------------
+
+    plt.gcf().text(
+        .06,
+        .95,
+        'UNCLASSIFIED',
+        fontsize=10,
+        color='green'
+    )
+
+    plt.gcf().text(
+        .78,
+        .05,
+        'UNCLASSIFIED',
+        fontsize=10,
+        color='green'
+    )
+
+    # ---------------------------------------------------------
+    # Output
+    # ---------------------------------------------------------
 
     pdf_pages.savefig(fig)
-    st.pyplot(fig, use_container_width=False) 
+
+    st.pyplot(
+        fig,
+        use_container_width=False
+    )
+
     plt.close(fig)
 
 # function to plot the original data and the fitted curve
@@ -212,7 +435,7 @@ def plot_fit(W_best, rho, a, d_meas, t_meas, u, v, w, p, q):
     tc = lc / a                                      # characteristic time scale
 
     # define log time-sampled region to fit functions to
-    t_fit = np.logspace(-4, 3, num=1000, base=10)
+    t_fit = np.logspace(-3, 3, num=1000, base=10)
     tstar_fit = t_fit / tc
 
     # plot strong shock regime (Taylor solution)
@@ -225,16 +448,71 @@ def plot_fit(W_best, rho, a, d_meas, t_meas, u, v, w, p, q):
     rstar_acoustic = tstar_fit
 
     fig = plt.figure(figsize=(9.0, 6.5))
-    plt.grid(True)
-    plt.scatter(tstar_fit, rstar_strong, s=6, color='red', label='Strong Shock Solution')
-    plt.scatter(tstar_fit, rstar_weak, s=6, color='orange', label='Weak Shock Solution')
-    plt.scatter(tstar_fit, rstar_acoustic, s=6, color='green', label='Acoustic Solution')
+    plt.minorticks_on()
+
+    plt.grid(
+        True,
+        which='major',
+        linestyle='-',
+        alpha=0.35
+    )
+
+    plt.grid(
+        True,
+        which='minor',
+        linestyle=':',
+        alpha=0.20
+    )
+    # plt.scatter(tstar_fit, rstar_strong, s=6, color='red', label='Strong Shock Solution')
+    # plt.scatter(tstar_fit, rstar_weak, s=6, color='orange', label='Weak Shock Solution')
+    # plt.scatter(tstar_fit, rstar_acoustic, s=6, color='green', label='Acoustic Solution')
+
+    plt.plot(tstar_fit, rstar_strong,
+        color='red',
+        linewidth=2,
+        label='Strong Shock Solution'
+        )
+    
+    plt.plot(tstar_fit, rstar_weak,
+        color='orange',
+        linewidth=2,
+        label='Weak Shock Solution'
+        )
+    
+    plt.plot(tstar_fit, rstar_acoustic,
+        color='green',
+        linewidth=2,
+        label='Acoustic Solution'
+        )
 
     # scale measured distance and time and plot
     d_scaled = d_meas / lc
     t_scaled = t_meas / tc
 
-    plt.scatter(t_scaled, d_scaled, s=24, color='blue', label='Scaled Measured Distance & Time')
+    # plt.scatter(t_scaled, d_scaled, s=24, color='blue', label='Scaled Measured Distance & Time')
+
+    t_scaled_unc = t_unc / tc
+    d_scaled_unc = d_unc / lc
+
+    plt.errorbar(
+        t_scaled,
+        d_scaled,
+        xerr=t_scaled_unc,
+        yerr=d_scaled_unc,
+        fmt='o',
+        color='blue',
+        capsize=3,
+        label='Scaled Measurement'
+    )
+
+    plt.text(
+        0.02,
+        0.05,
+        f'$l_c$ = {lc:.1f} m\n$t_c$ = {tc:.3f} s',
+        transform=plt.gca().transAxes,
+        fontsize=10,
+        bbox=dict(facecolor='white', alpha=0.8)
+    )
 
     plt.xlabel('Scaled Time')
     plt.ylabel('Scaled Radius')
