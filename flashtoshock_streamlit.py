@@ -161,8 +161,8 @@ def plot_yield_results(
     # Plotting range controls
     # ---------------------------------------------------------
 
-    d_fudge_low  = 0.8
-    d_fudge_high = 1.2
+    d_fudge_low  = 0.9
+    d_fudge_high = 1.1
 
     # logarithmically spaced distance array
     d_curve = np.logspace(
@@ -175,8 +175,8 @@ def plot_yield_results(
     # Generate yield curves
     # ---------------------------------------------------------
 
-    w_curve = []
-    w_curve_low = []
+    w_curve      = []
+    w_curve_low  = []
     w_curve_high = []
 
     for d in d_curve:
@@ -214,8 +214,8 @@ def plot_yield_results(
             )
         )
 
-    w_curve = np.array(w_curve)
-    w_curve_low = np.array(w_curve_low)
+    w_curve      = np.array(w_curve)
+    w_curve_low  = np.array(w_curve_low)
     w_curve_high = np.array(w_curve_high)
 
     # ---------------------------------------------------------
@@ -228,9 +228,9 @@ def plot_yield_results(
         np.isfinite(w_curve_high)
     )
 
-    d_curve = d_curve[valid_indices]
-    w_curve = w_curve[valid_indices]
-    w_curve_low = w_curve_low[valid_indices]
+    d_curve      = d_curve[valid_indices]
+    w_curve      = w_curve[valid_indices]
+    w_curve_low  = w_curve_low[valid_indices]
     w_curve_high = w_curve_high[valid_indices]
 
     # ---------------------------------------------------------
@@ -239,13 +239,13 @@ def plot_yield_results(
 
     if burst_type == 'surface':
 
-        w_curve *= 0.5
-        w_curve_low *= 0.5
+        w_curve      *= 0.5
+        w_curve_low  *= 0.5
         w_curve_high *= 0.5
 
-        W_best_plot *= 0.5
-        W_min_plot  *= 0.5
-        W_max_plot  *= 0.5
+        W_best_plot  *= 0.5
+        W_min_plot   *= 0.5
+        W_max_plot   *= 0.5
 
     # ---------------------------------------------------------
     # Protect uncertainty envelope ordering
@@ -289,7 +289,7 @@ def plot_yield_results(
 
     plt.axhline(
         d_meas,
-        linestyle='-',
+        linestyle='--',
         color='green',
         linewidth=1.5,
         label=f'Measured Distance = {d_meas:.1f} m'
@@ -297,14 +297,14 @@ def plot_yield_results(
 
     plt.axhline(
         d_meas + d_unc,
-        linestyle='--',
+        linestyle=':',
         color='green',
         alpha=0.7
     )
 
     plt.axhline(
         d_meas - d_unc,
-        linestyle='--',
+        linestyle=':',
         color='green',
         alpha=0.7
     )
@@ -315,7 +315,7 @@ def plot_yield_results(
 
     plt.axvline(
         W_best_plot,
-        linestyle='--',
+        linestyle='-',
         color='red',
         linewidth=1.5,
         label=(
@@ -334,13 +334,13 @@ def plot_yield_results(
 
     plt.axvline(
         W_min_plot,
-        linestyle=':',
+        linestyle='--',
         color='red'
     )
 
     plt.axvline(
         W_max_plot,
-        linestyle=':',
+        linestyle='--',
         color='red'
     )
 
@@ -351,28 +351,36 @@ def plot_yield_results(
     plt.xscale('log')
     plt.yscale('log')
 
-    valid_w = np.concatenate([
-        w_curve,
-        w_lower,
-        w_upper
-    ])
+    x_min = min(w_curve)
+    x_max = max(w_curve)
+    plt.xlim(x_min, x_max)
 
-    valid_w = valid_w[np.isfinite(valid_w)]
+    d_min = min(d_curve)
+    d_max = max(d_curve)
+    plt.ylim(d_min, d_max)
 
-    if len(valid_w) > 0:
+    # valid_w = np.concatenate([
+    #     w_curve,
+    #     w_lower,
+    #     w_upper
+    # ])
 
-        x_min = np.min(valid_w)
-        x_max = np.max(valid_w)
+    # valid_w = valid_w[np.isfinite(valid_w)]
 
-        plt.xlim(
-            x_min * 0.8,
-            x_max * 1.2
-        )
+    # if len(valid_w) > 0:
 
-    plt.ylim(
-        d_curve.min() * 0.8,
-        d_curve.max() * 1.2
-    )
+    #     x_min = np.min(valid_w)
+    #     x_max = np.max(valid_w)
+
+    #     plt.xlim(
+    #         max(0.001, x_min * 0.9),
+    #         x_max * 1.1
+    #     )
+
+    # plt.ylim(
+    #     d_curve.min() * 0.9,
+    #     d_curve.max() * 1.1
+    # )
 
     # ---------------------------------------------------------
     # Labels and title
@@ -463,9 +471,6 @@ def plot_fit(W_best, rho, a, d_meas, t_meas, u, v, w, p, q):
         linestyle=':',
         alpha=0.20
     )
-    # plt.scatter(tstar_fit, rstar_strong, s=6, color='red', label='Strong Shock Solution')
-    # plt.scatter(tstar_fit, rstar_weak, s=6, color='orange', label='Weak Shock Solution')
-    # plt.scatter(tstar_fit, rstar_acoustic, s=6, color='green', label='Acoustic Solution')
 
     plt.plot(tstar_fit, rstar_strong,
         color='red',
@@ -489,8 +494,6 @@ def plot_fit(W_best, rho, a, d_meas, t_meas, u, v, w, p, q):
     d_scaled = d_meas / lc
     t_scaled = t_meas / tc
 
-    # plt.scatter(t_scaled, d_scaled, s=24, color='blue', label='Scaled Measured Distance & Time')
-
     t_scaled_unc = t_unc / tc
     d_scaled_unc = d_unc / lc
 
@@ -506,8 +509,8 @@ def plot_fit(W_best, rho, a, d_meas, t_meas, u, v, w, p, q):
     )
 
     plt.text(
-        0.02,
-        0.05,
+        0.85,
+        0.04,
         f'$l_c$ = {lc:.1f} m\n$t_c$ = {tc:.3f} s',
         transform=plt.gca().transAxes,
         fontsize=10,
@@ -527,43 +530,277 @@ def plot_fit(W_best, rho, a, d_meas, t_meas, u, v, w, p, q):
     st.pyplot(fig, use_container_width=False) 
     pdf_pages.savefig(fig)
 
-def plot_hob_vs_yield(W_guesses, hob_calc_array, hob_dp_array, hob_dm_array, hob_best, hob_min, hob_max, t_meas, W_nom, W_low, W_high, shock_model, pdf_pages):
+def plot_hob_vs_yield(
+    W_guesses,
+    hob_calc_array,
+    hob_dp_array,
+    hob_dm_array,
+    hob_best,
+    hob_min,
+    hob_max,
+    t_meas,
+    W_nom,
+    W_low,
+    W_high,
+    shock_model,
+    pdf_pages,
+    terr_alt_m
+):
+
     fig = plt.figure(figsize=(9.0, 6.5))
-    plt.grid(True, which='both', linestyle=':')
-    
-    valid_indices = ~np.isnan(hob_calc_array)
-    W_guesses = W_guesses[valid_indices]
+
+    # ---------------------------------------------------------
+    # Grid styling
+    # ---------------------------------------------------------
+
+    plt.minorticks_on()
+
+    plt.grid(
+        True,
+        which='major',
+        linestyle='-',
+        alpha=0.35
+    )
+
+    plt.grid(
+        True,
+        which='minor',
+        linestyle=':',
+        alpha=0.20
+    )
+
+    # ---------------------------------------------------------
+    # Remove invalid values
+    # ---------------------------------------------------------
+
+    valid_indices = np.isfinite(hob_calc_array)
+
+    W_guesses      = W_guesses[valid_indices]
     hob_calc_array = hob_calc_array[valid_indices]
+    hob_dp_array   = hob_dp_array[valid_indices]
+    hob_dm_array   = hob_dm_array[valid_indices]
 
-    hob_upper = hob_calc_array + hob_dp_array[valid_indices]
-    hob_lower = hob_calc_array - hob_dm_array[valid_indices]
+    if len(W_guesses) == 0:
+        st.warning("No valid HOB values available for plotting.")
+        return
 
-    plt.plot(W_guesses, hob_calc_array, color='blue', label=f'Model Relationship (t = {t_meas:.3f} s)')
-    plt.fill_between(W_guesses, hob_lower, hob_upper, color='blue', alpha=0.15, label='Timing Uncertainty Envelope')
+    # ---------------------------------------------------------
+    # Construct uncertainty envelope safely
+    # ---------------------------------------------------------
 
-    plt.axvline(W_nom, linestyle='-', color='red', label=f'Nominal Yield = {W_nom:.3f} kt')
-    plt.axvline(W_low, linestyle='--', color='red')
-    plt.axvline(W_high, linestyle='--', color='red')
-    plt.axvspan(W_low, W_high, color='red', alpha=0.1, label=f'Yield Uncertainty')
-    plt.axhline(hob_best, linestyle='--', color='green', label=f'Best HOB (AGL) = {hob_best:.1f} m [{hob_min:.1f} to {hob_max:.1f}] m')
-    
-    if len(W_guesses) > 0:
-        plt.fill_betweenx([hob_min, hob_max], W_guesses.min(), W_guesses.max(), color='green', alpha=0.2, label='HOB Uncertainty')
-        plt.xlim(W_guesses.min(), W_guesses.max())
-        
-    plt.axhline(hob_min, linestyle=':', color='green')
-    plt.axhline(hob_max, linestyle=':', color='green')
+    hob_upper = np.maximum(
+        hob_calc_array + hob_dp_array,
+        hob_calc_array
+    )
+
+    hob_lower = np.maximum(
+        0.0,
+        np.minimum(
+            hob_calc_array - hob_dm_array,
+            hob_calc_array
+        )
+    )
+
+    # ---------------------------------------------------------
+    # Plot main HOB relationship
+    # ---------------------------------------------------------
+
+    plt.plot(
+        W_guesses,
+        hob_calc_array,
+        color='blue',
+        linewidth=2,
+        label=f'Model Relationship (t = {t_meas:.3f} s)'
+    )
+
+    plt.fill_between(
+        W_guesses,
+        hob_lower,
+        hob_upper,
+        color='blue',
+        alpha=0.15,
+        label='Timing Uncertainty Envelope'
+    )
+
+    # ---------------------------------------------------------
+    # Yield uncertainty region
+    # ---------------------------------------------------------
+
+    plt.axvline(
+        W_nom,
+        linestyle='--',
+        color='red',
+        linewidth=1.5,
+        label=f'Nominal Yield = {W_nom:.3f} kt'
+    )
+
+    plt.axvline(
+        W_low,
+        linestyle=':',
+        color='red'
+    )
+
+    plt.axvline(
+        W_high,
+        linestyle=':',
+        color='red'
+    )
+
+    plt.axvspan(
+        W_low,
+        W_high,
+        color='red',
+        alpha=0.10,
+        label='Yield Uncertainty'
+    )
+
+    # ---------------------------------------------------------
+    # HOB uncertainty region
+    # ---------------------------------------------------------
+
+    plt.axhline(
+        hob_best,
+        linestyle='-',
+        color='green',
+        linewidth=1.5,
+        label=(
+            f'Best HOB (AGL) = {hob_best:.1f} m '
+            f'[{hob_min:.1f} to {hob_max:.1f}] m'
+        )
+    )
+
+    plt.axhline(
+        hob_min,
+        linestyle='--',
+        color='green'
+    )
+
+    plt.axhline(
+        hob_max,
+        linestyle='--',
+        color='green'
+    )
+
+    plt.fill_betweenx(
+        [hob_min, hob_max],
+        W_guesses.min(),
+        W_guesses.max(),
+        color='green',
+        alpha=0.08,
+        label='HOB Uncertainty'
+    )
+
+    # ---------------------------------------------------------
+    # Axis scaling
+    # ---------------------------------------------------------
+
+    plt.xscale('log')
+
+    x_min = min(W_guesses)
+    x_max = max(W_guesses)
+    plt.xlim(x_min, x_max)
+
+    # plt.xlim(x_min, x_max)
+    #     W_guesses.min() * 0.9,
+    #     W_guesses.max() * 1.1
+    # )
+
+    y_min = min(hob_lower)
+    y_max = max(hob_upper)
+    plt.ylim(y_min, y_max)
+
+    valid_h = np.concatenate([
+        hob_calc_array,
+        hob_upper,
+        hob_lower
+    ])
+
+    valid_h = valid_h[np.isfinite(valid_h)]
+
+    if len(valid_h) > 0:
+
+        y_min = max(
+            1.0,
+            np.min(valid_h) * 0.9
+        )
+
+        y_max = np.max(valid_h) * 1.1
+
+        plt.ylim(
+            y_min,
+            y_max
+        )
+
+    # ---------------------------------------------------------
+    # Labels and title
+    # ---------------------------------------------------------
 
     plt.xlabel('Yield (kt)')
     plt.ylabel('Height of Burst AGL (m)')
-    plt.title(f'Calculated HOB vs. Yield ({shock_model.capitalize()} Shock Model)')
-    plt.legend(loc='best')
-    
-    plt.gcf().text(.06, .95, 'UNCLASSIFIED', fontsize=10, color='green')
-    plt.gcf().text(.78, .05, 'UNCLASSIFIED', fontsize=10, color='green')
+
+    plt.title(
+        f'Calculated HOB vs. Yield\n'
+        f'({shock_model.capitalize()} Shock Model, '
+        f'Terrain = {terr_alt_m:.1f} m MSL)'
+    )
+
+    # ---------------------------------------------------------
+    # Measurement annotation
+    # ---------------------------------------------------------
+
+    plt.text(
+        0.66,
+        0.02,
+        f'Measured arrival time = {t_meas:.3f} s',
+        transform=plt.gca().transAxes,
+        fontsize=10,
+        verticalalignment='bottom',
+        bbox=dict(
+            facecolor='white',
+            alpha=0.8
+        )
+    )
+
+    # ---------------------------------------------------------
+    # Classification markings
+    # ---------------------------------------------------------
+
+    plt.gcf().text(
+        .06,
+        .95,
+        'UNCLASSIFIED',
+        fontsize=10,
+        color='green'
+    )
+
+    plt.gcf().text(
+        .78,
+        .05,
+        'UNCLASSIFIED',
+        fontsize=10,
+        color='green'
+    )
+
+    # ---------------------------------------------------------
+    # Legend
+    # ---------------------------------------------------------
+
+    plt.legend(
+        loc='best',
+        fontsize=9
+    )
+
+    # ---------------------------------------------------------
+    # Output
+    # ---------------------------------------------------------
 
     pdf_pages.savefig(fig)
-    st.pyplot(fig, use_container_width=False) 
+
+    st.pyplot(
+        fig,
+        use_container_width=False
+    )
+
     plt.close(fig)
 
 def plot_velocity_profile(hob, W_kt, T_ground_c, shock_model, pdf_pages, terr_alt_m=0.0):
@@ -619,6 +856,7 @@ def plot_velocity_profile(hob, W_kt, T_ground_c, shock_model, pdf_pages, terr_al
 
 st.title("Flash-to-Shock Analysis Tool")
 st.markdown("**UNCLASSIFIED** - Calculates Explosive Yield or Height of Burst from flash-to-shock time measurements.")
+st.markdown("Uses Wei & Hargather (2021, 2023) Blast Wave Profile.")
 st.markdown("Author: C.J. Miko, AFTAC/23 ANS/ANA. Current as of: 21 April 2026.")
 st.markdown("---")
 
@@ -760,7 +998,8 @@ if st.button("Run Analysis", type="primary"):
                         h_dm.append(abs(hc - hm) if not np.isnan(hc) and not np.isnan(hm) else 0)
                         
                     plot_hob_vs_yield(np.array(w_guesses), np.array(h_calc), np.array(h_dp), np.array(h_dm), 
-                                      h_best, h_min, h_max, t_meas, w_nom, w_low, w_high, model, pdf_pages)
+                                      h_best, h_min, h_max, t_meas, w_nom, w_low, w_high, model, pdf_pages,
+                                      terr_alt_m)
                                       
                     if not np.isnan(h_best):
                         plot_velocity_profile(h_best, w_nom, temp_c, model, pdf_pages, terr_alt_m)
