@@ -161,15 +161,17 @@ def plot_yield_results(
     # Plotting range controls
     # ---------------------------------------------------------
 
-    d_fudge_low  = 0.9
-    d_fudge_high = 1.1
+    # d_fudge_low  = 0.9
+    # d_fudge_high = 1.1
 
-    # logarithmically spaced distance array
-    d_curve = np.logspace(
-        np.log10(max(1.0, d_meas * d_fudge_low)),
-        np.log10(d_meas * d_fudge_high),
-        500
-    )
+    # # logarithmically spaced distance array
+    # d_curve = np.logspace(
+    #     np.log10(max(1.0, d_meas * d_fudge_low)),
+    #     np.log10(d_meas * d_fudge_high),
+    #     500
+    # )
+
+    d_curve = np.linspace(max(0., 0.8*d_meas), 1.2*d_meas, 200)
 
     # ---------------------------------------------------------
     # Generate yield curves
@@ -351,36 +353,13 @@ def plot_yield_results(
     plt.xscale('log')
     plt.yscale('log')
 
-    x_min = min(w_curve)
-    x_max = max(w_curve)
+    x_min = 0.8 * min(w_curve)
+    x_max = 1.2 * max(w_curve)
     plt.xlim(x_min, x_max)
 
     d_min = min(d_curve)
     d_max = max(d_curve)
     plt.ylim(d_min, d_max)
-
-    # valid_w = np.concatenate([
-    #     w_curve,
-    #     w_lower,
-    #     w_upper
-    # ])
-
-    # valid_w = valid_w[np.isfinite(valid_w)]
-
-    # if len(valid_w) > 0:
-
-    #     x_min = np.min(valid_w)
-    #     x_max = np.max(valid_w)
-
-    #     plt.xlim(
-    #         max(0.001, x_min * 0.9),
-    #         x_max * 1.1
-    #     )
-
-    # plt.ylim(
-    #     d_curve.min() * 0.9,
-    #     d_curve.max() * 1.1
-    # )
 
     # ---------------------------------------------------------
     # Labels and title
@@ -700,36 +679,9 @@ def plot_hob_vs_yield(
     x_max = max(W_guesses)
     plt.xlim(x_min, x_max)
 
-    # plt.xlim(x_min, x_max)
-    #     W_guesses.min() * 0.9,
-    #     W_guesses.max() * 1.1
-    # )
-
     y_min = min(hob_lower)
     y_max = max(hob_upper)
     plt.ylim(y_min, y_max)
-
-    valid_h = np.concatenate([
-        hob_calc_array,
-        hob_upper,
-        hob_lower
-    ])
-
-    valid_h = valid_h[np.isfinite(valid_h)]
-
-    if len(valid_h) > 0:
-
-        y_min = max(
-            1.0,
-            np.min(valid_h) * 0.9
-        )
-
-        y_max = np.max(valid_h) * 1.1
-
-        plt.ylim(
-            y_min,
-            y_max
-        )
 
     # ---------------------------------------------------------
     # Labels and title
