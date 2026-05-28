@@ -1,5 +1,5 @@
 # Flash to Shock Analysis Streamlit App
-# Adapted by AI, 21 April 2026
+# C.J. Miko, 21 April 2026
 # Unified application for determining Yield or Height of Burst.
 # UNCLASSIFIED
 
