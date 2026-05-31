@@ -43,7 +43,7 @@ def plot_yield_results(
     #     500
     # )
 
-    d_curve = np.linspace(max(0., 0.8*d_meas), 1.2*d_meas, 200)
+    d_curve = np.linspace(0.5*d_meas, 2.0*d_meas, 300)
 
     # ---------------------------------------------------------
     # Generate yield curves
@@ -122,13 +122,6 @@ def plot_yield_results(
         W_max_plot   *= 0.5
 
     # ---------------------------------------------------------
-    # Protect uncertainty envelope ordering
-    # ---------------------------------------------------------
-
-    w_lower = np.minimum(w_curve_low, w_curve_high)
-    w_upper = np.maximum(w_curve_low, w_curve_high)
-
-    # ---------------------------------------------------------
     # Plot model relationship
     # ---------------------------------------------------------
 
@@ -142,8 +135,8 @@ def plot_yield_results(
 
     plt.fill_betweenx(
         d_curve,
-        w_lower,
-        w_upper,
+        w_curve_low,
+        w_curve_high,
         color='blue',
         alpha=0.15,
         label='Timing Uncertainty Envelope'
@@ -225,12 +218,12 @@ def plot_yield_results(
     plt.xscale('log')
     plt.yscale('log')
 
-    x_min = 0.8 * min(w_curve)
-    x_max = 1.2 * max(w_curve)
+    x_min = 0.5 * W_min_plot
+    x_max = 2.0 * W_max_plot
     plt.xlim(x_min, x_max)
 
-    d_min = min(d_curve)
-    d_max = max(d_curve)
+    d_min = 0.95 * (d_meas - d_unc)
+    d_max = 1.05 * (d_meas + d_unc)
     plt.ylim(d_min, d_max)
 
     # ---------------------------------------------------------
@@ -297,7 +290,7 @@ def plot_fit(W_best, rho, a, d_meas, t_meas, u, v, w, p, q, pdf_pages):
     tc = lc / a                                      # characteristic time scale
 
     # define log time-sampled region to fit functions to
-    t_fit = np.logspace(-3, 3, num=1000, base=10)
+    t_fit = np.logspace(-4, 4, num=1000, base=10)
     tstar_fit = t_fit / tc
 
     # plot strong shock regime (Taylor solution)
@@ -553,13 +546,14 @@ def plot_hob_vs_yield(
     # ---------------------------------------------------------
 
     plt.xscale('log')
+    plt.yscale('log')
 
-    x_min = min(W_guesses)
-    x_max = max(W_guesses)
+    x_min = 0.8 * W_low
+    x_max = 1.2 * W_high
     plt.xlim(x_min, x_max)
 
-    y_min = min(hob_lower)
-    y_max = max(hob_upper)
+    y_min = 0.8 * hob_min
+    y_max = 1.2 * hob_max
     plt.ylim(y_min, y_max)
 
     # ---------------------------------------------------------

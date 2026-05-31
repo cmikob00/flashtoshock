@@ -22,8 +22,8 @@ if __name__ == "__main__":
     # --- Streamlit UI Layout ---
     st.title("Flash-to-Shock Analysis Tool")
     st.markdown("**UNCLASSIFIED** - Calculates Explosive Yield or Height of Burst from flash-to-shock time measurements.")
-    st.markdown("Uses Wei & Hargather (2021, 2023) Blast Wave Profile.")
-    st.markdown("Author: C.J. Miko, AFTAC/23 ANS/ANA. Current as of: 21 April 2026.")
+    st.markdown("Uses Wei & Hargather (2021) Blast Wave Profile.")
+    st.markdown("Author: C.J. Miko, AFTAC/23 ANS/ANA. Current as of: 30 May 2026.")
     st.markdown("---")
 
     # Layout columns for inputs
